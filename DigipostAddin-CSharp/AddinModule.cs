@@ -7,6 +7,7 @@ using Digipost.Api.Client;
 using System.Diagnostics;
 using Digipost.Api.Client.Api;
 using Microsoft.Office.Interop.Word;
+using System.IO;
 
 namespace DigipostAddin_CSharp
 {
@@ -21,6 +22,7 @@ namespace DigipostAddin_CSharp
             System.Windows.Forms.Application.EnableVisualStyles();
             InitializeComponent();
             // Please add any initialization code to the AddinInitialize event handler
+            
         }
  
         #region Add-in Express automatic code
@@ -90,31 +92,29 @@ namespace DigipostAddin_CSharp
             //Logging.Initialize(config);
             var client = new DigipostClient(config, Thumbprint);
             
-            byte[] _contentBytes = null;
             var curdoc = WordApp.ActiveDocument;
             var range = curdoc.Content;
             var newDocument = new Word.Document();
-
-            object destFilename = "E:\\Test\\test.pdf";
+            
+            object destFilename = System.IO.Path.GetTempPath()+"\\tmp.pdf";
 
             object missing = Type.Missing;
             curdoc.SaveAs( ref destFilename,  WdExportFormat.wdExportFormatPDF, ref missing, ref missing, ref missing, ref missing, ref missing, ref missing, ref missing, ref missing);
-            
-            
-            var fullname = curdoc.FullName;
 
-            
-            //for(int i =1; i< range.PageSetup) //loop through pages
-            var str = "";
-            for (int i = 1; i < range.Paragraphs.Count; i++)
-            {
-                str = str + range.Paragraphs.Item(i).Range.Text;
+            Digipost.Api.Client.Domain.Recipient recipient = null;
+            if (adxDigitalDeliveryCB.Pressed) { 
+                if(adxIdentifyType.SelectedItemId == "adxIdentifyTypeNameAndAddress")
+                {
+                    recipient = new Digipost.Api.Client.Domain.Recipient(new Digipost.Api.Client.Domain.RecipientByNameAndAddress(adxDigitalFullNameBox.Text, adxDigitalPostalCodeBox.Text, adxDigitalCityBox.Text, adxDigitalAddressBox.Text));
+                }
+                else if(adxIdentifyType.SelectedItemId == "adxIdentifyTypeSSN") { 
+                    recipient = new Digipost.Api.Client.Domain.Recipient(Digipost.Api.Client.Domain.Enums.IdentificationChoice.PersonalidentificationNumber, adxSSNBox.Text.Trim());
+                }
             }
-
-            _contentBytes = System.Text.Encoding.UTF8.GetBytes(str);
-            
-
-            var recipient = new Digipost.Api.Client.Domain.Recipient(Digipost.Api.Client.Domain.Enums.IdentificationChoice.PersonalidentificationNumber, adxSSNBox.Text.Trim());
+            else if (adxPhysicalDeliveryCB.Pressed)
+            {
+                recipient = new Digipost.Api.Client.Domain.Recipient(new Digipost.Api.Client.Domain.Print.PrintDetails(new Digipost.Api.Client.Domain.Print.PrintRecipient(adxNameBox.Text, new Digipost.Api.Client.Domain.Print.NorwegianAddress(adxPostalCodeBox.Text,adxCityBox.Text,adxAddressBox.Text)),new Digipost.Api.Client.Domain.Print.PrintReturnAddress(adxReturnNameBox.Text,new Digipost.Api.Client.Domain.Print.NorwegianAddress(adxRetPostalBox.Text,adxRetCityBox.Text,adxRetAddressBox.Text))));
+            }
             var document = new Digipost.Api.Client.Domain.Document(adxSubjectBox.Text, "pdf",(string) destFilename);
 
             var message = new Digipost.Api.Client.Domain.Message(recipient, document);
@@ -123,7 +123,11 @@ namespace DigipostAddin_CSharp
             Marshal.ReleaseComObject(range);
             Marshal.ReleaseComObject(curdoc);
 
-            
+            if (File.Exists((string)destFilename))
+            {
+                File.Delete((string)destFilename);
+            }
+
 
         }
         private void Test()
@@ -148,6 +152,41 @@ namespace DigipostAddin_CSharp
         }
 
         static object missing = Type.Missing;
+
+        private void adxDigitalDeliveryCB_PropertyChanging(object sender, ADXRibbonPropertyChangingEventArgs e)
+        {
+            adxDigitalGroup.Visible = adxDigitalDeliveryCB.Pressed;
+        }
+
+        private void adxDigitalDeliveryCB_OnClick(object sender, IRibbonControl control, bool pressed)
+        {
+            adxDigitalGroup.Visible = adxDigitalDeliveryCB.Pressed;
+        }
+
+        private void adxPhysicalDeliveryCB_PropertyChanging(object sender, ADXRibbonPropertyChangingEventArgs e)
+        {
+            adxPhysicalDeliveryGroup.Visible = adxPhysicalDeliveryCB.Pressed;
+        }
+
+        private void adxPhysicalDeliveryCB_OnClick(object sender, IRibbonControl control, bool pressed)
+        {
+            adxPhysicalDeliveryGroup.Visible = adxPhysicalDeliveryCB.Pressed;
+        }
+
+        private void adxIdentifyType_OnAction(object sender, IRibbonControl Control, string selectedId, int selectedIndex)
+        {
+            if(selectedId == "adxIdentifyTypeSSN")
+            {
+                adxDigitalSSNGroup.Visible = true;
+                adxDigitalFullNameGroup.Visible = false;
+            }
+            else if( selectedId == "adxIdentifyTypeNameAndAddress")
+            {
+                adxDigitalFullNameGroup.Visible = true;
+                adxDigitalSSNGroup.Visible = false;
+            }
+
+        }
     }
     
 }
