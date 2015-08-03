@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:netfx="http://schemas.microsoft.com/wix/NetFxExtension">
+  <Product Id="*" Name="DigipostAddin_CSharp" Language="1033" Version="1.0.0" Manufacturer="Digipost" UpgradeCode="{A027429D-8A7A-470B-A5F8-DEA1257B58CF}" Codepage="1252">
+    <Package AdminImage="no" Comments="DigipostAddin_CSharp" Compressed="yes" Description="DigipostAddin_CSharp" InstallerVersion="200" InstallScope="perUser" Languages="1033" Manufacturer="Digipost" Platform="x86" ReadOnly="no" ShortNames="no" SummaryCodepage="1252" />
+    <Media Id="1" Cabinet="DigipostAddin_CSharp.cab" EmbedCab="yes" DiskPrompt="CD-ROM #1" />
+    <Property Id="DiskPrompt" Value="DigipostAddin_CSharp Installation [1]" />
+    <Property Id="ARPCOMMENTS" Value="DigipostAddin_CSharp" />
+    <Property Id="ARPCONTACT" Value="Digipost" />
+    <!-- The ".NET Framework" launch condition. -->
+    <PropertyRef Id="NETFRAMEWORK20"/>
+    <Condition Message="This setup requires the .NET Framework 2.0.  Please install the .NET Framework and run this setup again."><![CDATA[Installed OR NETFRAMEWORK20]]></Condition>
+    <CustomAction Id="PreventDowngrading" Error="Newer version already installed." />
+    <Binary Id="adxregistrator_exe" SourceFile="$(var.ADX_PATH)\Redistributables\adxregistrator.exe" />
+    <!-- The "adxregistrator.exe" custom action. -->
+    <CustomAction Id="_95BA9BB9_5265_48AA_9CC9_F125ABACABFF" BinaryKey="adxregistrator_exe" Execute="deferred" ExeCommand="/install=&quot;[TARGETDIR]$(var.DigipostAddin_CSharp.TargetFileName)&quot; /privileges=user" Impersonate="yes" />
+    <!-- The "adxregistrator.exe" custom action. -->
+    <CustomAction Id="_D1AE6FA5_4ED2_459F_BEFF_B2B01BBD24E7" BinaryKey="adxregistrator_exe" Execute="rollback" ExeCommand="/uninstall=&quot;[TARGETDIR]$(var.DigipostAddin_CSharp.TargetFileName)&quot; /privileges=user" Impersonate="yes" />
+    <!-- The "adxregistrator.exe" custom action. -->
+    <CustomAction Id="_670DE00E_5199_420E_B1F4_7962701F1A6E" BinaryKey="adxregistrator_exe" Execute="deferred" ExeCommand="/uninstall=&quot;[TARGETDIR]$(var.DigipostAddin_CSharp.TargetFileName)&quot; /privileges=user" Impersonate="yes" />
+    <!-- Initialize the "TARGETDIR" directory property. -->
+    <CustomAction Id="DIRCA_TARGETDIR" Property="TARGETDIR" Value="[LocalAppDataFolder][Manufacturer]\[ProductName]" Execute="firstSequence" />
+    <Property Id="PREVIOUSINSTALLFOLDER">
+      <RegistrySearch Id="_1CDB09BF_2428_44A7_9489_BC872148061F" Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="Installed" Type="raw" />
+    </Property>
+    <CustomAction Id="DIRCA_TARGETDIR_UNINSTALL" Property="TARGETDIR" Value="[PREVIOUSINSTALLFOLDER]" Execute="firstSequence" />
+    <UIRef Id="WixUI_InstallDir" />
+    <UIRef Id="WixUI_ErrorProgressText" />
+    <Property Id="WIXUI_INSTALLDIR" Value="TARGETDIR" />
+    <!-- The directory tree of the installation package. -->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <!-- The "DigipostAddin_CSharp" project output. -->
+      <Directory Id="DigipostAddin_CSharp.Binaries" />
+      <!-- The "DigipostAddin_CSharp" project output. -->
+      <Directory Id="DigipostAddin_CSharp.Satellites" />
+      <Component Id="comp_6F4A6EBE_28AC_4BE7_9CF1_31808505BDE8" Guid="215CA5E4-2CC3-4154-BFFA-8ACAF94E3829" Permanent="no" SharedDllRefCount="no" Transitive="no">
+        <RegistryKey Root="HKCU" Key="Software\[Manufacturer]\[ProductName]">
+          <RegistryValue Type="string" Name="Installed" Value="[TARGETDIR]" KeyPath="yes" />
+        </RegistryKey>
+        <File Id="_C422282F_F94B_4993_BC03_4696807282BD" DiskId="1" Hidden="no" ReadOnly="no" System="no" Vital="yes" Compressed="yes" Name="adxloader64.dll" Source="$(var.DigipostAddin_CSharp.ProjectDir)Loader\adxloader64.dll" />
+        <File Id="_560972C8_119A_4DF9_8214_8B2979E37D9B" DiskId="1" Hidden="no" ReadOnly="no" System="no" Vital="yes" Compressed="yes" Name="adxloader.dll.manifest" Source="$(var.DigipostAddin_CSharp.ProjectDir)Loader\adxloader.dll.manifest" />
+        <File Id="_F2227E11_5CEE_487F_AE8E_767A977D3B1F" DiskId="1" Hidden="no" ReadOnly="no" System="no" Vital="yes" Compressed="yes" Name="adxloader.dll" Source="$(var.DigipostAddin_CSharp.ProjectDir)Loader\adxloader.dll" />
+        <File Id="_CF556D09_B592_4DF6_97C8_A823502B6AB8" DiskId="1" Hidden="no" ReadOnly="no" System="no" Vital="yes" Compressed="yes" Name="AddinExpress.MSO.2005.dll" Source="C:\Program Files (x86)\Add-in Express\Add-in Express for .NET\Bin\AddinExpress.MSO.2005.dll" />
+				<File Id="_F98B381A_C2CC_4498_A581_53E118CB1168" DiskId="1" Hidden="no" ReadOnly="no" System="no" Vital="yes" Compressed="yes" Name="Digipost.Api.Client.dll" Source="$(var.DigipostAddin_CSharp.TargetDir)Digipost.Api.Client.dll" />
+				<File Id="_299F0784_0160_429F_B3F6_FD0991BF0F0F" DiskId="1" Hidden="no" ReadOnly="no" System="no" Vital="yes" Compressed="yes" Name="Digipost.Api.Client.Domain.dll" Source="$(var.DigipostAddin_CSharp.TargetDir)Digipost.Api.Client.Domain.dll" />
+				<File Id="_5B4E88DC_8018_4A54_B367_E33A1FB17F7B" DiskId="1" Hidden="no" ReadOnly="no" System="no" Vital="yes" Compressed="yes" Name="Interop.Word.dll" Source="$(var.DigipostAddin_CSharp.TargetDir)Interop.Word.dll" />
+				<File Id="_4D02F483_C98A_4B61_AA17_6BBD0BD285CE" DiskId="1" Hidden="no" ReadOnly="no" System="no" Vital="yes" Compressed="yes" Name="ApiClientShared.dll" Source="$(var.DigipostAddin_CSharp.TargetDir)ApiClientShared.dll" />
+				<File Id="_98188A66_0BB8_4DC6_B12B_6006A5A9B327" DiskId="1" Hidden="no" ReadOnly="no" System="no" Vital="yes" Compressed="yes" Name="Difi.Felles.Utility.dll" Source="$(var.DigipostAddin_CSharp.TargetDir)Difi.Felles.Utility.dll" />
+				<File Id="_BFE49691_C250_4F36_9ACD_12959656B08E" DiskId="1" Hidden="no" ReadOnly="no" System="no" Vital="yes" Compressed="yes" Name="Difi.Felles.Utility.xml" Source="$(var.DigipostAddin_CSharp.TargetDir)Difi.Felles.Utility.xml" />
+				<File Id="_303F4822_0729_4872_9FBE_FD96D7107E02" DiskId="1" Hidden="no" ReadOnly="no" System="no" Vital="yes" Compressed="yes" Name="Digipost.Api.Client.Domain.xml" Source="$(var.DigipostAddin_CSharp.TargetDir)Digipost.Api.Client.Domain.xml" />
+				<File Id="_4F67DE99_9885_4CD0_90B2_16458603C9BD" DiskId="1" Hidden="no" ReadOnly="no" System="no" Vital="yes" Compressed="yes" Name="Digipost.Api.Client.xml" Source="$(var.DigipostAddin_CSharp.TargetDir)Digipost.Api.Client.xml" />
+				<File Id="_F6B8FF6B_6569_4522_8D71_10B4C8C8C842" DiskId="1" Hidden="no" ReadOnly="no" System="no" Vital="yes" Compressed="yes" Name="Interop.Office.dll" Source="$(var.DigipostAddin_CSharp.TargetDir)Interop.Office.dll" />
+				<File Id="_89B830C2_5BAF_432F_9FEB_204F4730A4D2" DiskId="1" Hidden="no" ReadOnly="no" System="no" Vital="yes" Compressed="yes" Name="Interop.VBIDE.dll" Source="$(var.DigipostAddin_CSharp.TargetDir)Interop.VBIDE.dll" />   
+      </Component>
+    </Directory>
+    <!-- The FileSystem group of the installation package. -->
+    <ComponentGroup Id="FileSystemGroup">
+      <ComponentGroupRef Id="DigipostAddin_CSharp.Binaries" />
+      <ComponentGroupRef Id="DigipostAddin_CSharp.Satellites" />
+      <ComponentRef Id="comp_6F4A6EBE_28AC_4BE7_9CF1_31808505BDE8" />
+    </ComponentGroup>
+    <!-- The composite feature of the installation package. -->
+    <Feature Id="CompleteInstall" Title="All Files" Level="1" ConfigurableDirectory="TARGETDIR">
+      <ComponentGroupRef Id="FileSystemGroup" />
+    </Feature>
+    <Upgrade Id="{A027429D-8A7A-470B-A5F8-DEA1257B58CF}">
+      <UpgradeVersion Minimum="1.0.0" Property="NEWPRODUCTFOUND" OnlyDetect="yes" IncludeMinimum="no" Language="1033" />
+      <UpgradeVersion Maximum="1.0.0" Property="OLDPRODUCTFOUND" OnlyDetect="no" IncludeMinimum="yes" IncludeMaximum="no" Language="1033" />
+    </Upgrade>
+    <InstallExecuteSequence>
+      <Custom Action="DIRCA_TARGETDIR" Before="CostInitialize"><![CDATA[TARGETDIR=""]]></Custom>
+      <Custom Action="DIRCA_TARGETDIR_UNINSTALL" After="AppSearch"><![CDATA[PREVIOUSINSTALLFOLDER]]></Custom>
+      <Custom Action="PreventDowngrading" After="FindRelatedProducts"><![CDATA[NEWPRODUCTFOUND]]></Custom>
+      <Custom Action="_95BA9BB9_5265_48AA_9CC9_F125ABACABFF" After="StartServices"><![CDATA[$comp_6F4A6EBE_28AC_4BE7_9CF1_31808505BDE8>2]]></Custom>
+      <Custom Action="_D1AE6FA5_4ED2_459F_BEFF_B2B01BBD24E7" After="_95BA9BB9_5265_48AA_9CC9_F125ABACABFF"><![CDATA[$comp_6F4A6EBE_28AC_4BE7_9CF1_31808505BDE8>2]]></Custom>
+      <Custom Action="_670DE00E_5199_420E_B1F4_7962701F1A6E" After="MsiUnpublishAssemblies"><![CDATA[$comp_6F4A6EBE_28AC_4BE7_9CF1_31808505BDE8=2]]></Custom>
+      <RemoveExistingProducts Before="InstallInitialize" />
+    </InstallExecuteSequence>
+    <InstallUISequence>
+      <FindRelatedProducts Sequence="200" />
+      <Custom Action="DIRCA_TARGETDIR" Before="CostInitialize"><![CDATA[TARGETDIR=""]]></Custom>
+      <Custom Action="DIRCA_TARGETDIR_UNINSTALL" After="AppSearch"><![CDATA[PREVIOUSINSTALLFOLDER]]></Custom>
+      <Custom Action="PreventDowngrading" After="FindRelatedProducts"><![CDATA[NEWPRODUCTFOUND]]></Custom>
+    </InstallUISequence>
+    <AdminUISequence>
+      <Custom Action="DIRCA_TARGETDIR" Before="CostInitialize"><![CDATA[TARGETDIR=""]]></Custom>
+    </AdminUISequence>
+  </Product>
+</Wix>
