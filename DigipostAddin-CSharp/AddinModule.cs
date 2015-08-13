@@ -1,54 +1,67 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Timers;
 using System.Windows.Forms;
 using AddinExpress.MSO;
 using Digipost.Api.Client;
-using System.Diagnostics;
 using Digipost.Api.Client.Api;
+using Digipost.Api.Client.Domain;
+using Digipost.Api.Client.Domain.Enums;
+using Digipost.Api.Client.Domain.PersonDetails;
+using Digipost.Api.Client.Domain.Print;
 using Microsoft.Office.Interop.Word;
-using System.IO;
+using Application = System.Windows.Forms.Application;
+using Document = Word.Document;
+using Message = Digipost.Api.Client.Domain.Message;
+using Timer = System.Timers.Timer;
+using _Application = Word._Application;
 
 namespace DigipostAddin_CSharp
 {
     /// <summary>
     ///   Add-in Express Add-in Module
     /// </summary>
-    [GuidAttribute("BEE06C06-7F4A-45D0-8716-01830A7DBEE5"), ProgId("DigipostAddin_CSharp.AddinModule")]
-    public partial class AddinModule : AddinExpress.MSO.ADXAddinModule
+    [Guid("BEE06C06-7F4A-45D0-8716-01830A7DBEE5"), ProgId("DigipostAddin_CSharp.AddinModule")]
+    public partial class AddinModule : ADXAddinModule
     {
         public AddinModule()
         {
-            System.Windows.Forms.Application.EnableVisualStyles();
+            Application.EnableVisualStyles();
             InitializeComponent();
-            // Please add any initialization code to the AddinInitialize event handler
             
+            
+
+            // Please add any initialization code to the AddinInitialize event handler
+
         }
- 
+        
+
         #region Add-in Express automatic code
- 
+
         // Required by Add-in Express - do not modify
         // the methods within this region
- 
-        public override System.ComponentModel.IContainer GetContainer()
+
+        public override IContainer GetContainer()
         {
-            if (components == null)
-                components = new System.ComponentModel.Container();
-            return components;
+            return components ?? (components = new Container());
         }
- 
-        [ComRegisterFunctionAttribute]
+
+        [ComRegisterFunction]
         public static void AddinRegister(Type t)
         {
-            AddinExpress.MSO.ADXAddinModule.ADXRegister(t);
+            ADXRegister(t);
         }
- 
-        [ComUnregisterFunctionAttribute]
+
+        [ComUnregisterFunction]
         public static void AddinUnregister(Type t)
         {
-            AddinExpress.MSO.ADXAddinModule.ADXUnregister(t);
+            ADXUnregister(t);
         }
- 
+
         public override void UninstallControls()
         {
             base.UninstallControls();
@@ -56,27 +69,21 @@ namespace DigipostAddin_CSharp
 
         #endregion
 
-        public static new AddinModule CurrentInstance 
-        {
-            get
-            {
-                return AddinExpress.MSO.ADXAddinModule.CurrentInstance as AddinModule;
-            }
-        }
+        public static new AddinModule CurrentInstance => ADXAddinModule.CurrentInstance as AddinModule;
 
-        public Word._Application WordApp
-        {
-            get
-            {
-                return (HostApplication as Word._Application);
-            }
-        }
+        public _Application WordApp => (HostApplication as _Application);
 
-        private void adxRibbonButton1_OnClick(object sender, IRibbonControl control, bool pressed)
+        static DigipostClient _client = null;
+        private PersonDetailsResult _personDetailsResult;
+
+        private DigipostClient GetClient()
         {
-            const string SenderId = "779052"; //"106768801";
-            string Thumbprint = "d6 5e 6c 4c 77 fc 0e 0d c5 f5 ac 32 bc 43 70 1f a8 b0 3d 21".ToUpper();
-            var config = new ClientConfig(SenderId)
+            if (_client != null)
+                return _client;
+
+            const string senderId = "779052"; //"106768801";
+            var thumbprint = "d6 5e 6c 4c 77 fc 0e 0d c5 f5 ac 32 bc 43 70 1f a8 b0 3d 21".ToUpper();
+            var config = new ClientConfig(senderId)
             {
                 ApiUrl = new Uri("https://api.digipost.no"),
                 Logger = (severity, konversasjonsId, metode, melding) =>
@@ -90,45 +97,58 @@ namespace DigipostAddin_CSharp
             };
 
             //Logging.Initialize(config);
-            var client = new DigipostClient(config, Thumbprint);
+            return _client = new DigipostClient(config, thumbprint);
+        }
+
+        private void adxRibbonButton1_OnClick(object sender, IRibbonControl control, bool pressed)
+        {
+
             
             var curdoc = WordApp.ActiveDocument;
             var range = curdoc.Content;
-            var newDocument = new Word.Document();
             
-            object destFilename = System.IO.Path.GetTempPath()+"\\tmp.pdf";
 
-            object missing = Type.Missing;
-            curdoc.SaveAs( ref destFilename,  WdExportFormat.wdExportFormatPDF, ref missing, ref missing, ref missing, ref missing, ref missing, ref missing, ref missing, ref missing);
+            object destFilename = Path.GetTempPath() + "\\tmp.pdf";
 
-            Digipost.Api.Client.Domain.Recipient recipient = null;
-            if (adxDeliveryMethodDDL.SelectedItemId == "adxDMDigital") { 
-                if(adxIdentifyType.SelectedItemId == "adxIdentifyTypeNameAndAddress")
-                {
-                    recipient = new Digipost.Api.Client.Domain.Recipient(new Digipost.Api.Client.Domain.RecipientByNameAndAddress(adxDigitalFullNameBox.Text, adxDigitalPostalCodeBox.Text, adxDigitalCityBox.Text, adxDigitalAddressBox.Text));
-                }
-                else if(adxIdentifyType.SelectedItemId == "adxIdentifyTypeSSN") { 
-                    recipient = new Digipost.Api.Client.Domain.Recipient(Digipost.Api.Client.Domain.Enums.IdentificationChoice.PersonalidentificationNumber, adxSSNBox.Text.Trim());
-                }
-            }
-            else if (adxDeliveryMethodDDL.SelectedItemId == "adxDMPhysical")
+            var missing = Type.Missing;
+            curdoc.SaveAs(ref destFilename, WdExportFormat.wdExportFormatPDF, ref missing, ref missing, ref missing, ref missing, ref missing, ref missing, ref missing, ref missing);
+
+            Recipient recipient = null;
+            switch (adxDeliveryMethodDDL.SelectedItemId)
             {
-                recipient = new Digipost.Api.Client.Domain.Recipient(new Digipost.Api.Client.Domain.Print.PrintDetails(new Digipost.Api.Client.Domain.Print.PrintRecipient(adxNameBox.Text, new Digipost.Api.Client.Domain.Print.NorwegianAddress(adxPostalCodeBox.Text,adxCityBox.Text,adxAddressBox.Text)),new Digipost.Api.Client.Domain.Print.PrintReturnAddress(adxReturnNameBox.Text,new Digipost.Api.Client.Domain.Print.NorwegianAddress(adxRetPostalBox.Text,adxRetCityBox.Text,adxRetAddressBox.Text))));
+                case "adxDMDigital":
+                    switch (adxIdentifyType.SelectedItemId)
+                    {
+                        case "adxIdentifyTypeNameAndAddress":
+                            recipient = new Recipient(new RecipientByNameAndAddress(adxDigitalFullNameBox.Text, adxDigitalPostalCodeBox.Text, adxDigitalCityBox.Text, adxDigitalAddressBox.Text));
+                            break;
+                        case "adxIdentifyTypeSSN":
+                            recipient = new Recipient(IdentificationChoice.PersonalidentificationNumber, adxSSNBox.Text.Trim());
+                            break;
+                        case "adxIdentifyTypeAutosuggest":
+                            recipient = new Recipient(IdentificationChoice.DigipostAddress,adxDDLSearchResult.Items[adxDDLSearchResult.SelectedItemIndex].AsRibbonItem.Id);
+                            break;
+                    }
+                    break;
+                case "adxDMPhysical":
+                    recipient = new Recipient(new PrintDetails(new PrintRecipient(adxNameBox.Text, new NorwegianAddress(adxPostalCodeBox.Text, adxCityBox.Text, adxAddressBox.Text)), new PrintReturnAddress(adxReturnNameBox.Text, new NorwegianAddress(adxRetPostalBox.Text, adxRetCityBox.Text, adxRetAddressBox.Text))));
+                    break;
             }
-            var document = new Digipost.Api.Client.Domain.Document(adxSubjectBox.Text, "pdf",(string) destFilename);
+            var document = new Digipost.Api.Client.Domain.Document(adxSubjectBox.Text, "pdf", (string)destFilename);
 
-            var message = new Digipost.Api.Client.Domain.Message(recipient, document);
+            var message = new Message(recipient, document);
 
-            Digipost.Api.Client.Domain.MessageDeliveryResult response = null;
-            try {
-                response  = client.SendMessage(message);
+            try
+            {
+                var response = GetClient().SendMessage(message);
                 MessageBox.Show("Status: " + response.Status);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                MessageBox.Show("Exception "+e.Message+ ","+ e.InnerException);
+                MessageBox.Show("Exception " + e.Message + "," + e.InnerException);
             }
-            finally {
+            finally
+            {
                 Marshal.ReleaseComObject(range);
                 Marshal.ReleaseComObject(curdoc);
 
@@ -140,68 +160,115 @@ namespace DigipostAddin_CSharp
 
 
         }
-        private void Test()
-        {
-            object visible = true;
-            object readOnly = true;
-            object sourceFilename = "";
-            string targetFilename = "";
-            Microsoft.Office.Interop.Word.Application wordApp = new Microsoft.Office.Interop.Word.Application();
-
-            Document doc = wordApp.Documents.Open(ref sourceFilename, ref missing, ref readOnly, ref missing, ref missing, ref missing, ref missing,
-                                                  ref missing, ref missing, ref missing, ref missing, ref visible, ref missing, ref missing,
-                                                  ref missing, ref missing);
-            
-            doc.ExportAsFixedFormat(targetFilename, WdExportFormat.wdExportFormatPDF, false, WdExportOptimizeFor.wdExportOptimizeForOnScreen,
-                                    WdExportRange.wdExportAllDocument, 0, 0, WdExportItem.wdExportDocumentContent, false, false,
-                                    WdExportCreateBookmarks.wdExportCreateNoBookmarks, false, false, false, ref missing);
-
-            object saveChanges = false;
-            doc.Close(ref saveChanges, ref missing, ref missing);
-            wordApp.Quit(ref saveChanges, ref missing, ref missing);
-        }
-
-        static object missing = Type.Missing;
-
+      
         
-
-        
-
         private void adxIdentifyType_OnAction(object sender, IRibbonControl Control, string selectedId, int selectedIndex)
         {
-            if(selectedId == "adxIdentifyTypeSSN")
+            switch (selectedId)
             {
-                adxDigitalSSNGroup.Visible = true;
-                adxDigitalFullNameGroup.Visible = false;
+                case "adxIdentifyTypeSSN":
+                    adxDigitalSSNGroup.Visible = true;
+                    adxDigitalFullNameGroup.Visible = adxAutoSuggestBox.Visible = adxPersonGroup.Visible= false;
+                    break;
+                case "adxIdentifyTypeNameAndAddress":
+                    adxDigitalFullNameGroup.Visible = true;
+                    adxDigitalSSNGroup.Visible = adxAutoSuggestBox.Visible = adxPersonGroup.Visible =  false;
+                    break;
+                case "adxIdentifyTypeAutosuggest":
+                    adxDigitalFullNameGroup.Visible = adxDigitalSSNGroup.Visible = false;
+                    adxAutoSuggestBox.Visible = true;
+                    break;
             }
-            else if( selectedId == "adxIdentifyTypeNameAndAddress")
-            {
-                adxDigitalFullNameGroup.Visible = true;
-                adxDigitalSSNGroup.Visible = false;
-            }
-
         }
 
         private void adxDeliveryMethodDDL_OnAction(object sender, IRibbonControl Control, string selectedId, int selectedIndex)
         {
-            if(adxDeliveryMethodDDL.SelectedItemId == "adxDMDigital")
+            switch (selectedId)
             {
-                adxPhysicalDeliveryGroup.Visible = false;
+                case "adxDMDigital":
+                    adxPhysicalDeliveryGroup.Visible = false;
 
-                adxDigitalGroup.Visible = true;
-                
-                
-            }
-            else if(adxDeliveryMethodDDL.SelectedItemId == "adxDMPhysical")
-            {
-                adxDigitalGroup.Visible = false;
-                adxDigitalSSNGroup.Visible = adxDigitalFullNameGroup.Visible = false;
-                adxIdentifyType.SelectedItemIndex = -1;
+                    adxDigitalGroup.Visible = true;
+                    
+                    adxIdentifyType_OnAction(sender, Control, "adxIdentifyTypeAutosuggest", adxIdentifyType.SelectedItemIndex);
 
-                adxPhysicalDeliveryGroup.Visible = true;
+                    break;
+                case "adxDMPhysical":
+                    adxDigitalGroup.Visible = false;
+                    adxDigitalSSNGroup.Visible = adxDigitalFullNameGroup.Visible = false;
+                    adxIdentifyType.SelectedItemIndex = -1;
+
+                    adxPhysicalDeliveryGroup.Visible = true;
+                    break;
             }
         }
+
+        private void AddResultButtons(PersonDetails personDetails)
+        {
+            var resultRibbon = new ADXRibbonItem(this.components)
+            {
+                Caption = personDetails.FirstName+ " " +personDetails.MiddleName +" "+personDetails.LastName,
+                Id = personDetails.DigipostAddress,
+                ImageTransparentColor = Color.Red,
+                ScreenTip = personDetails.MobileNumber+ "\r\n"+personDetails.DigipostAddress
+            };
+
+            this.adxDDLSearchResult.Items.Add(resultRibbon);
+            adxPersonGroup.Visible = true;
+
+        }
+
+        private void resetSearchResult()
+        {
+            adxDDLSearchResult.Items.Clear();
+            
+            adxPersonLBL.Caption = " ";
+        }
+
+        private void DoSearch(string searchString)
+        {
+
+            resetSearchResult();
+            adxSendGroup.Visible = false;
+            
+            
+            var suggestionsResult = _personDetailsResult = GetClient().Search(searchString);
+             
+
+             foreach (var res in suggestionsResult.PersonDetails)
+             {
+                AddResultButtons(res);
+            }
+             
+        }
+
+        private void adxRibbonTab1_PropertyChanging(object sender, ADXRibbonPropertyChangingEventArgs e)
+        {
+            
+        }
+
+        private void adxRibbonGroup2_PropertyChanging(object sender, ADXRibbonPropertyChangingEventArgs e)
+        {
+            
+        }
+
+        private void adxDDLSearchResult_OnAction(object sender, IRibbonControl Control, string selectedId, int selectedIndex)
+        {
+            var item = adxDDLSearchResult.Items[adxDDLSearchResult.SelectedItemIndex].AsRibbonItem;
+
+            var name = item.Caption;
+            var helpText = item.ScreenTip;
+
+            adxPersonLBL.Caption = name + " ,\r\n" + helpText;
+
+            adxSendGroup.Visible = true;
+
+        }
+
+        private void adxSearchBTN_OnClick(object sender, IRibbonControl control, bool pressed)
+        {
+            DoSearch(adxRibbonEditBox1.Text);
+        }
     }
-    
 }
 

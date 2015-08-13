@@ -35,20 +35,28 @@
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Reference Include="ApiClientShared, Version=1.0.5578.25965, Culture=neutral, PublicKeyToken=6e0e24e0c7886562, processorArchitecture=MSIL">
-      <HintPath>..\packages\digipost-api-client.1.0.5630.26034\lib\net45\ApiClientShared.dll</HintPath>
+    <Reference Include="AddinExpress.OL.2005, Version=8.0.4320.2005, Culture=neutral, PublicKeyToken=e69a7e0f3592d2b8, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AddinExpress.WD.2005, Version=8.0.4320.2005, Culture=neutral, PublicKeyToken=e69a7e0f3592d2b8, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ApiClientShared, Version=1.0.5637.25994, Culture=neutral, PublicKeyToken=6e0e24e0c7886562, processorArchitecture=MSIL">
+      <HintPath>..\packages\digipost-api-client.2.0.5701.18587-beta\lib\net45\ApiClientShared.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Difi.Felles.Utility, Version=0.1.5598.25086, Culture=neutral, PublicKeyToken=bd8139acc70008cb, processorArchitecture=MSIL">
-      <HintPath>..\packages\digipost-api-client.1.0.5630.26034\lib\net45\Difi.Felles.Utility.dll</HintPath>
+      <HintPath>..\packages\digipost-api-client.2.0.5701.18587-beta\lib\net45\Difi.Felles.Utility.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Digipost.Api.Client, Version=1.0.5630.26034, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\digipost-api-client.1.0.5630.26034\lib\net45\Digipost.Api.Client.dll</HintPath>
+    <Reference Include="Digipost.Api.Client, Version=2.0.5701.18587, Culture=neutral, PublicKeyToken=683b8efceae684a6, processorArchitecture=MSIL">
+      <HintPath>..\packages\digipost-api-client.2.0.5701.18587-beta\lib\net45\Digipost.Api.Client.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Digipost.Api.Client.Domain, Version=1.0.5630.26034, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\digipost-api-client.1.0.5630.26034\lib\net45\Digipost.Api.Client.Domain.dll</HintPath>
+    <Reference Include="Digipost.Api.Client.Domain, Version=2.0.5701.18587, Culture=neutral, PublicKeyToken=683b8efceae684a6, processorArchitecture=MSIL">
+      <HintPath>..\packages\digipost-api-client.2.0.5701.18587-beta\lib\net45\Digipost.Api.Client.Domain.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Office.Interop.Word, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
